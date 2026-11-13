@@ -3,6 +3,8 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   apk:
     runs-on: ubuntu-latest
@@ -42,3 +44,10 @@ jobs:
         with:
           name: MyBook-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Publicar Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk MyBook.apk
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest MyBook.apk --title "MyBook" --notes "APK do MyBook (uso pessoal)"
