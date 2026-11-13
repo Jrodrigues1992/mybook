@@ -1,0 +1,44 @@
+name: Gerar APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Instalar dependencias
+        run: npm install
+      - name: Montar a pasta www
+        run: |
+          mkdir -p www/lib
+          cp index.html www/index.html
+          cp node_modules/jszip/dist/jszip.min.js www/lib/
+          cp node_modules/epubjs/dist/epub.min.js www/lib/
+          cp node_modules/pdfjs-dist/build/pdf.min.js www/lib/
+          cp node_modules/pdfjs-dist/build/pdf.worker.min.js www/lib/
+      - name: Criar projeto Android
+        run: npx cap add android
+      - name: Preparar o projeto
+        run: |
+          pip install pillow
+          python build-native.py
+      - name: Sincronizar
+        run: npx cap sync android
+      - name: Compilar o APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MyBook-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
